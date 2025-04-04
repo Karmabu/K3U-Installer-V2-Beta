@@ -93,7 +93,8 @@ Confirm and watch the logs and progress bar
 
 ![k3u3](https://github.com/user-attachments/assets/dc045c3b-f84e-47fa-bfb3-88f90dd54bdc)
 
-</details>
+
+Copyright [2025] Karma3u
 📜 License
 Licensed under the Apache License 2.0.
 You are free to use, distribute, and modify this tool in personal and commercial projects.
