@@ -1,0 +1,70 @@
+{
+  "k3u_type": "embedded",
+  "placeholders_info": {
+    "{INSTALL_PATH}": "Base folder where 'python_embeded' and 'ComfyUI' are located.",
+    "{EMBEDDED_PYTHON_DIR}": "Embedded Python folder (derived: {INSTALL_PATH}\\python_embeded).",
+    "{EMBEDDED_PYTHON_EXE}": "Embedded Python executable (derived: {EMBEDDED_PYTHON_DIR}\\python.exe).",
+    "{COMFYUI_PATH}": "ComfyUI folder (derived: {INSTALL_PATH}\\ComfyUI)."
+  },
+  "setups": {
+    "Update_ComfyUI_EmbedPy312_CUDA126": {
+      "description": "Update ComfyUI and dependencies for Python 3.12 Embedded and PyTorch (CUDA 12.6).",
+      "info": "Assumes existence of python_embeded. Updates pip, PyTorch (CUDA 12.6), Triton, SageAttention, ComfyUI, nodes.",
+      "python_version_target": "3.12",
+      "cuda_version_target": "12.6",
+      "steps": [
+        {"key": "prequire1", "step_data": [
+          {"name": "Check Embedded Python Existence", "command": "if exist \"{EMBEDDED_PYTHON_EXE}\" (echo OK) else (echo ERROR: Embedded Python not found in {EMBEDDED_PYTHON_EXE} && exit /b 1)"},
+          {"name": "Check ComfyUI Existence", "command": "if exist \"{COMFYUI_PATH}\\main.py\" (echo OK) else (echo WARNING: ComfyUI folder not found in {COMFYUI_PATH}, git pull will fail. && timeout /t 5)"},
+          {"name": "Check Curl", "command": "where curl"},
+          {"name": "Check Tar", "command": "where tar"},
+          {"name": "Check Git", "command": "where git"}
+        ]},
+        {"key": "update_pip", "step_data": [
+          {"name": "Update Pip", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_include_libs", "step_data": [
+          {"name": "Download Python 3.12 Include/Libs (zip)", "command": "curl -L \"https://github.com/woct0rdho/triton-windows/releases/download/v3.0.0-windows.post1/python_3.12.7_include_libs.zip\" -o \"{INSTALL_PATH}\\py_libs.zip\""},
+          {"name": "Extract Include/Libs", "command": "tar -xf \"{INSTALL_PATH}\\py_libs.zip\" -C \"{EMBEDDED_PYTHON_DIR}\""},
+          {"name": "Clean downloaded file (libs zip)", "command": "del \"{INSTALL_PATH}\\py_libs.zip\""}
+        ]},
+        {"key": "install_base_deps", "step_data": [
+          {"name": "Install/Update Accelerate", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade \"accelerate >= 1.1.1\""},
+          {"name": "Install/Update Diffusers", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade \"diffusers >= 0.31.0\""},
+          {"name": "Install/Update Transformers", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade \"transformers >= 4.39.3\""}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+          {"name": "Install/Update PyTorch (CUDA 12.6)", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126"}
+        ]},
+        {"key": "install_triton", "step_data": [
+          {"name": "Install/Update Triton 3.2.0 (Py3.12)", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade https://github.com/woct0rdho/triton-windows/releases/download/v3.2.0-windows.post10/triton-3.2.0-cp312-cp312-win_amd64.whl"},
+          {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"},
+          {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"}
+        ]},
+        {"key": "update_comfyui", "step_data": [
+          {"name": "Update ComfyUI Repository", "command": "cd /d \"{COMFYUI_PATH}\" && git fetch origin && git checkout master && git reset --hard origin/master"}
+        ]},
+        {"key": "install_comfy_reqs", "step_data": [
+          {"name": "Install/Update ComfyUI requirements.txt", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade -r \"{COMFYUI_PATH}\\requirements.txt\""}
+        ]},
+        {"key": "install_other_deps", "step_data": [
+          {"name": "Install/Update OnnxRuntime-GPU", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade onnxruntime-gpu"},
+          {"name": "Install/Update Wheel", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade wheel"},
+          {"name": "Install/Update Setuptools", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade setuptools"},
+          {"name": "Install/Update Packaging", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade packaging"},
+          {"name": "Install/Update Ninja", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade ninja"}
+        ]},
+        {"key": "install_sage", "step_data": [
+          {"name": "Clone SageAttention (if it doesn't exist)", "command": "if not exist \"{INSTALL_PATH}\\temp_sage\" git clone https://github.com/thu-ml/SageAttention \"{INSTALL_PATH}\\temp_sage\""},
+          {"name": "Update SageAttention", "command": "if exist \"{INSTALL_PATH}\\temp_sage\\.git\" ( cd /d \"{INSTALL_PATH}\\temp_sage\" && git pull )"},
+          {"name": "Install/Update SageAttention", "command": "cd /d \"{INSTALL_PATH}\\temp_sage\" && \"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade ."},
+          {"name": "Clean SageAttention", "command": "rmdir /s /q \"{INSTALL_PATH}\\temp_sage\""}
+        ]},
+        {"key": "update_nodes", "step_data": [
+          {"name": "Update/Clone ComfyUI-Manager", "command": "if exist \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\\.git\" ( cd /d \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\" && git pull ) else ( git clone https://github.com/ltdrdata/ComfyUI-Manager \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\" )"},
+          {"name": "Update/Clone ComfyUI-Crystools", "command": "if exist \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\\.git\" ( cd /d \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\" && git pull ) else ( git clone https://github.com/crystian/ComfyUI-Crystools \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\" )"}
+        ]}
+      ]
+    }
+  }
+}

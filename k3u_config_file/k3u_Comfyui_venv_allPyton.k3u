@@ -1,0 +1,478 @@
+{
+  "k3u_type": "external_venv",
+  "placeholders_info": {
+    "{INSTALL_PATH}": "Base folder where to clone ComfyUI (provided by the user in the GUI).",
+    "{PYTHON_EXE}": "Full path to the Python executable for this specific setup (e.g., C:\\Python310\\python.exe). MUST BE PROVIDED BY THE USER.",
+    "{VENV_PATH}": "Path of the virtual environment (derived: {INSTALL_PATH}\\ComfyUI\\venv).",
+    "{VENV_PYTHON}": "Path to the Python executable in the venv (derived: {VENV_PATH}\\Scripts\\python.exe).",
+    "{COMFYUI_PATH}": "ComfyUI folder (derived: {INSTALL_PATH}\\ComfyUI)."
+  },
+  "setups": {
+    "ComfyUI_Py310_CUDA124": {
+      "description": "ComfyUI + Triton + SageAttention installation for Python 3.10 and CUDA 12.4.",
+      "info": "Includes prerequisite checks for Python 3.10, CUDA 12.4 and cl.exe.",
+      "python_version_target": "3.10",
+      "cuda_version_target": "12.4",
+      "steps": [
+        {"key": "start", "step_data": [
+          {"name": "Clone ComfyUI Repository", "command": "git clone https://github.com/comfyanonymous/ComfyUI \"{COMFYUI_PATH}\""}
+        ]},
+        {"key": "prequire1", "step_data": [
+          {"name": "Check Python Version (3.10)", "command": "\"{PYTHON_EXE}\" --version | findstr /B /C:\"Python 3.10\""},
+          {"name": "Check CUDA Version (12.4)", "command": "nvcc --version | findstr /C:\"release 12.4,\""},
+          {"name": "Check C++ Compiler (cl.exe)", "command": "where cl.exe"}
+        ]},
+        {"key": "install_part1", "step_data": [
+          {"name": "Create Virtual Environment", "command": "\"{PYTHON_EXE}\" -m venv \"{VENV_PATH}\""},
+          {"name": "Copy Python Headers", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\Include\" \"{VENV_PATH}\\Include\""},
+          {"name": "Copy Python Libs", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\libs\" \"{VENV_PATH}\\libs\""},
+          {"name": "Copy VC Runtime DLL 1", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Copy VC Runtime DLL 2", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140_1.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Update Pip", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+          {"name": "Install PyTorch (CUDA 12.4)", "command": "\"{VENV_PYTHON}\" -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124"}
+        ]},
+        {"key": "install_part2", "step_data": [
+          {"name": "Install requirements.txt", "command": "\"{VENV_PYTHON}\" -m pip install -r \"{COMFYUI_PATH}\\requirements.txt\""},
+          {"name": "Install OnnxRuntime-GPU", "command": "\"{VENV_PYTHON}\" -m pip install onnxruntime-gpu"},
+          {"name": "Install Wheel", "command": "\"{VENV_PYTHON}\" -m pip install wheel"},
+          {"name": "Install Setuptools", "command": "\"{VENV_PYTHON}\" -m pip install setuptools"},
+          {"name": "Install Packaging", "command": "\"{VENV_PYTHON}\" -m pip install packaging"},
+          {"name": "Install Ninja", "command": "\"{VENV_PYTHON}\" -m pip install ninja"},
+          {"name": "Install Accelerate", "command": "\"{VENV_PYTHON}\" -m pip install \"accelerate >= 1.1.1\""},
+          {"name": "Install Diffusers", "command": "\"{VENV_PYTHON}\" -m pip install \"diffusers >= 0.31.0\""},
+          {"name": "Install Transformers", "command": "\"{VENV_PYTHON}\" -m pip install \"transformers >= 4.39.3\""},
+          {"name": "Update Setuptools (again)", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade setuptools"}
+        ]},
+        {"key": "input1_triton", "step_data": {
+          "question": "Choose Triton version (check PyTorch/Python 3.10 compatibility):",
+          "choices": {
+            "Triton_3.2.0": { "steps": [ {"name": "Install Triton 3.2.0 (Py3.10)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.2.0-windows.post10/triton-3.2.0-cp310-cp310-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.1.0": { "steps": [ {"name": "Install Triton 3.1.0 (Py3.10)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.1.0-cp310-cp310-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.0.0": { "steps": [ {"name": "Install Triton 3.0.0 (Py3.10)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.0.0-cp310-cp310-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] }
+          }
+        }},
+        {"key": "post_part1", "step_data": [
+          {"name": "Clone SageAttention", "command": "git clone https://github.com/thu-ml/SageAttention \"{VENV_PATH}\\SageAttention\""},
+          {"name": "Install SageAttention", "command": "cd /d \"{VENV_PATH}\\SageAttention\" && \"{VENV_PYTHON}\" setup.py install"},
+          {"name": "Clean SageAttention", "command": "rmdir /s /q \"{VENV_PATH}\\SageAttention\""}
+        ]},
+        {"key": "post_part2", "step_data": [
+          {"name": "Create Run_Comfyui.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo call venv\\Scripts\\activate.bat & echo echo Venv Activated & echo .\\venv\\Scripts\\python.exe -s main.py --fast --windows-standalone-build --use-pytorch-cross-attention & echo pause) > \"{INSTALL_PATH}\\Run_Comfyui.bat\""},
+          {"name": "Create Activate_Venv.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\\venv\" & echo call .\\Scripts\\activate.bat & echo echo Venv Activated & echo cmd.exe /k) > \"{INSTALL_PATH}\\Activate_Venv.bat\""},
+          {"name": "Create Update_Comfy.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo git pull & echo pause) > \"{INSTALL_PATH}\\Update_Comfy.bat\""},
+          {"name": "Clone ComfyUI-Manager", "command": "git clone https://github.com/ltdrdata/ComfyUI-Manager \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\""},
+          {"name": "Clone ComfyUI-Crystools", "command": "git clone https://github.com/crystian/ComfyUI-Crystools \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\""}
+        ]}
+      ]
+    },
+    "ComfyUI_Py310_CUDA126": {
+      "description": "ComfyUI + Triton + SageAttention installation for Python 3.10 and CUDA 12.6.",
+      "info": "Includes prerequisite checks for Python 3.10, CUDA 12.6 and cl.exe.",
+      "python_version_target": "3.10",
+      "cuda_version_target": "12.6",
+      "steps": [
+        {"key": "start", "step_data": [
+          {"name": "Clone ComfyUI Repository", "command": "git clone https://github.com/comfyanonymous/ComfyUI \"{COMFYUI_PATH}\""}
+        ]},
+        {"key": "prequire1", "step_data": [
+          {"name": "Check Python Version (3.10)", "command": "\"{PYTHON_EXE}\" --version | findstr /B /C:\"Python 3.10\""},
+          {"name": "Check CUDA Version (12.6)", "command": "nvcc --version | findstr /C:\"release 12.6,\""},
+          {"name": "Check C++ Compiler (cl.exe)", "command": "where cl.exe"}
+        ]},
+        {"key": "install_part1", "step_data": [
+          {"name": "Create Virtual Environment", "command": "\"{PYTHON_EXE}\" -m venv \"{VENV_PATH}\""},
+          {"name": "Copy Python Headers", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\Include\" \"{VENV_PATH}\\Include\""},
+          {"name": "Copy Python Libs", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\libs\" \"{VENV_PATH}\\libs\""},
+          {"name": "Copy VC Runtime DLL 1", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Copy VC Runtime DLL 2", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140_1.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Update Pip", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+          {"name": "Install PyTorch (CUDA 12.6)", "command": "\"{VENV_PYTHON}\" -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126"}
+        ]},
+        {"key": "install_part2", "step_data": [
+          {"name": "Install requirements.txt", "command": "\"{VENV_PYTHON}\" -m pip install -r \"{COMFYUI_PATH}\\requirements.txt\""},
+          {"name": "Install OnnxRuntime-GPU", "command": "\"{VENV_PYTHON}\" -m pip install onnxruntime-gpu"},
+          {"name": "Install Wheel", "command": "\"{VENV_PYTHON}\" -m pip install wheel"},
+          {"name": "Install Setuptools", "command": "\"{VENV_PYTHON}\" -m pip install setuptools"},
+          {"name": "Install Packaging", "command": "\"{VENV_PYTHON}\" -m pip install packaging"},
+          {"name": "Install Ninja", "command": "\"{VENV_PYTHON}\" -m pip install ninja"},
+          {"name": "Install Accelerate", "command": "\"{VENV_PYTHON}\" -m pip install \"accelerate >= 1.1.1\""},
+          {"name": "Install Diffusers", "command": "\"{VENV_PYTHON}\" -m pip install \"diffusers >= 0.31.0\""},
+          {"name": "Install Transformers", "command": "\"{VENV_PYTHON}\" -m pip install \"transformers >= 4.39.3\""},
+          {"name": "Update Setuptools (again)", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade setuptools"}
+        ]},
+        {"key": "input1_triton", "step_data": {
+          "question": "Choose Triton version (check PyTorch/Python 3.10 compatibility):",
+          "choices": {
+            "Triton_3.2.0": { "steps": [ {"name": "Install Triton 3.2.0 (Py3.10)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.2.0-windows.post10/triton-3.2.0-cp310-cp310-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.1.0": { "steps": [ {"name": "Install Triton 3.1.0 (Py3.10)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.1.0-cp310-cp310-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.0.0": { "steps": [ {"name": "Install Triton 3.0.0 (Py3.10)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.0.0-cp310-cp310-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] }
+          }
+        }},
+        {"key": "post_part1", "step_data": [
+          {"name": "Clone SageAttention", "command": "git clone https://github.com/thu-ml/SageAttention \"{VENV_PATH}\\SageAttention\""},
+          {"name": "Install SageAttention", "command": "cd /d \"{VENV_PATH}\\SageAttention\" && \"{VENV_PYTHON}\" setup.py install"},
+          {"name": "Clean SageAttention", "command": "rmdir /s /q \"{VENV_PATH}\\SageAttention\""}
+        ]},
+        {"key": "post_part2", "step_data": [
+          {"name": "Create Run_Comfyui.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo call venv\\Scripts\\activate.bat & echo echo Venv Activated & echo .\\venv\\Scripts\\python.exe -s main.py --fast --windows-standalone-build --use-pytorch-cross-attention & echo pause) > \"{INSTALL_PATH}\\Run_Comfyui.bat\""},
+          {"name": "Create Activate_Venv.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\\venv\" & echo call .\\Scripts\\activate.bat & echo echo Venv Activated & echo cmd.exe /k) > \"{INSTALL_PATH}\\Activate_Venv.bat\""},
+          {"name": "Create Update_Comfy.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo git pull & echo pause) > \"{INSTALL_PATH}\\Update_Comfy.bat\""},
+          {"name": "Clone ComfyUI-Manager", "command": "git clone https://github.com/ltdrdata/ComfyUI-Manager \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\""},
+          {"name": "Clone ComfyUI-Crystools", "command": "git clone https://github.com/crystian/ComfyUI-Crystools \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\""}
+        ]}
+      ]
+    },
+    "ComfyUI_Py311_CUDA124": {
+      "description": "ComfyUI + Triton + SageAttention installation for Python 3.11 and CUDA 12.4.",
+      "info": "Includes prerequisite checks for Python 3.11, CUDA 12.4 and cl.exe. Triton 3.2 not available.",
+      "python_version_target": "3.11",
+      "cuda_version_target": "12.4",
+      "steps": [
+        {"key": "start", "step_data": [
+          {"name": "Clone ComfyUI Repository", "command": "git clone https://github.com/comfyanonymous/ComfyUI \"{COMFYUI_PATH}\""}
+        ]},
+        {"key": "prequire1", "step_data": [
+          {"name": "Check Python Version (3.11)", "command": "\"{PYTHON_EXE}\" --version | findstr /B /C:\"Python 3.11\""},
+          {"name": "Check CUDA Version (12.4)", "command": "nvcc --version | findstr /C:\"release 12.4,\""},
+          {"name": "Check C++ Compiler (cl.exe)", "command": "where cl.exe"}
+        ]},
+        {"key": "install_part1", "step_data": [
+          {"name": "Create Virtual Environment", "command": "\"{PYTHON_EXE}\" -m venv \"{VENV_PATH}\""},
+          {"name": "Copy Python Headers", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\Include\" \"{VENV_PATH}\\Include\""},
+          {"name": "Copy Python Libs", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\libs\" \"{VENV_PATH}\\libs\""},
+          {"name": "Copy VC Runtime DLL 1", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Copy VC Runtime DLL 2", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140_1.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Update Pip", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+          {"name": "Install PyTorch (CUDA 12.4)", "command": "\"{VENV_PYTHON}\" -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124"}
+        ]},
+        {"key": "install_part2", "step_data": [
+          {"name": "Install requirements.txt", "command": "\"{VENV_PYTHON}\" -m pip install -r \"{COMFYUI_PATH}\\requirements.txt\""},
+          {"name": "Install OnnxRuntime-GPU", "command": "\"{VENV_PYTHON}\" -m pip install onnxruntime-gpu"},
+          {"name": "Install Wheel", "command": "\"{VENV_PYTHON}\" -m pip install wheel"},
+          {"name": "Install Setuptools", "command": "\"{VENV_PYTHON}\" -m pip install setuptools"},
+          {"name": "Install Packaging", "command": "\"{VENV_PYTHON}\" -m pip install packaging"},
+          {"name": "Install Ninja", "command": "\"{VENV_PYTHON}\" -m pip install ninja"},
+          {"name": "Install Accelerate", "command": "\"{VENV_PYTHON}\" -m pip install \"accelerate >= 1.1.1\""},
+          {"name": "Install Diffusers", "command": "\"{VENV_PYTHON}\" -m pip install \"diffusers >= 0.31.0\""},
+          {"name": "Install Transformers", "command": "\"{VENV_PYTHON}\" -m pip install \"transformers >= 4.39.3\""},
+          {"name": "Update Setuptools (again)", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade setuptools"}
+        ]},
+        {"key": "input1_triton", "step_data": {
+          "question": "Choose Triton version (check PyTorch/Python 3.11 compatibility):",
+          "choices": {
+            "Triton_3.1.0": { "steps": [ {"name": "Install Triton 3.1.0 (Py3.11)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.1.0-cp311-cp311-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.0.0": { "steps": [ {"name": "Install Triton 3.0.0 (Py3.11)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.0.0-cp311-cp311-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] }
+          }
+        }},
+        {"key": "post_part1", "step_data": [
+          {"name": "Clone SageAttention", "command": "git clone https://github.com/thu-ml/SageAttention \"{VENV_PATH}\\SageAttention\""},
+          {"name": "Install SageAttention", "command": "cd /d \"{VENV_PATH}\\SageAttention\" && \"{VENV_PYTHON}\" setup.py install"},
+          {"name": "Clean SageAttention", "command": "rmdir /s /q \"{VENV_PATH}\\SageAttention\""}
+        ]},
+        {"key": "post_part2", "step_data": [
+          {"name": "Create Run_Comfyui.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo call venv\\Scripts\\activate.bat & echo echo Venv Activated & echo .\\venv\\Scripts\\python.exe -s main.py --fast --windows-standalone-build --use-pytorch-cross-attention & echo pause) > \"{INSTALL_PATH}\\Run_Comfyui.bat\""},
+          {"name": "Create Activate_Venv.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\\venv\" & echo call .\\Scripts\\activate.bat & echo echo Venv Activated & echo cmd.exe /k) > \"{INSTALL_PATH}\\Activate_Venv.bat\""},
+          {"name": "Create Update_Comfy.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo git pull & echo pause) > \"{INSTALL_PATH}\\Update_Comfy.bat\""},
+          {"name": "Clone ComfyUI-Manager", "command": "git clone https://github.com/ltdrdata/ComfyUI-Manager \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\""},
+          {"name": "Clone ComfyUI-Crystools", "command": "git clone https://github.com/crystian/ComfyUI-Crystools \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\""}
+        ]}
+      ]
+    },
+    "ComfyUI_Py311_CUDA126": {
+      "description": "ComfyUI + Triton + SageAttention installation for Python 3.11 and CUDA 12.6.",
+      "info": "Includes prerequisite checks for Python 3.11, CUDA 12.6 and cl.exe. Triton 3.2 not available.",
+      "python_version_target": "3.11",
+      "cuda_version_target": "12.6",
+      "steps": [
+        {"key": "start", "step_data": [
+          {"name": "Clone ComfyUI Repository", "command": "git clone https://github.com/comfyanonymous/ComfyUI \"{COMFYUI_PATH}\""}
+        ]},
+        {"key": "prequire1", "step_data": [
+          {"name": "Check Python Version (3.11)", "command": "\"{PYTHON_EXE}\" --version | findstr /B /C:\"Python 3.11\""},
+          {"name": "Check CUDA Version (12.6)", "command": "nvcc --version | findstr /C:\"release 12.6,\""},
+          {"name": "Check C++ Compiler (cl.exe)", "command": "where cl.exe"}
+        ]},
+        {"key": "install_part1", "step_data": [
+          {"name": "Create Virtual Environment", "command": "\"{PYTHON_EXE}\" -m venv \"{VENV_PATH}\""},
+          {"name": "Copy Python Headers", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\Include\" \"{VENV_PATH}\\Include\""},
+          {"name": "Copy Python Libs", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\libs\" \"{VENV_PATH}\\libs\""},
+          {"name": "Copy VC Runtime DLL 1", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Copy VC Runtime DLL 2", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140_1.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Update Pip", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+          {"name": "Install PyTorch (CUDA 12.6)", "command": "\"{VENV_PYTHON}\" -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126"}
+        ]},
+        {"key": "install_part2", "step_data": [
+          {"name": "Install requirements.txt", "command": "\"{VENV_PYTHON}\" -m pip install -r \"{COMFYUI_PATH}\\requirements.txt\""},
+          {"name": "Install OnnxRuntime-GPU", "command": "\"{VENV_PYTHON}\" -m pip install onnxruntime-gpu"},
+          {"name": "Install Wheel", "command": "\"{VENV_PYTHON}\" -m pip install wheel"},
+          {"name": "Install Setuptools", "command": "\"{VENV_PYTHON}\" -m pip install setuptools"},
+          {"name": "Install Packaging", "command": "\"{VENV_PYTHON}\" -m pip install packaging"},
+          {"name": "Install Ninja", "command": "\"{VENV_PYTHON}\" -m pip install ninja"},
+          {"name": "Install Accelerate", "command": "\"{VENV_PYTHON}\" -m pip install \"accelerate >= 1.1.1\""},
+          {"name": "Install Diffusers", "command": "\"{VENV_PYTHON}\" -m pip install \"diffusers >= 0.31.0\""},
+          {"name": "Install Transformers", "command": "\"{VENV_PYTHON}\" -m pip install \"transformers >= 4.39.3\""},
+          {"name": "Update Setuptools (again)", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade setuptools"}
+        ]},
+        {"key": "input1_triton", "step_data": {
+          "question": "Choose Triton version (check PyTorch/Python 3.11 compatibility):",
+          "choices": {
+            "Triton_3.1.0": { "steps": [ {"name": "Install Triton 3.1.0 (Py3.11)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.1.0-cp311-cp311-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.0.0": { "steps": [ {"name": "Install Triton 3.0.0 (Py3.11)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.0.0-cp311-cp311-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] }
+          }
+        }},
+        {"key": "post_part1", "step_data": [
+          {"name": "Clone SageAttention", "command": "git clone https://github.com/thu-ml/SageAttention \"{VENV_PATH}\\SageAttention\""},
+          {"name": "Install SageAttention", "command": "cd /d \"{VENV_PATH}\\SageAttention\" && \"{VENV_PYTHON}\" setup.py install"},
+          {"name": "Clean SageAttention", "command": "rmdir /s /q \"{VENV_PATH}\\SageAttention\""}
+        ]},
+        {"key": "post_part2", "step_data": [
+          {"name": "Create Run_Comfyui.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo call venv\\Scripts\\activate.bat & echo echo Venv Activated & echo .\\venv\\Scripts\\python.exe -s main.py --fast --windows-standalone-build --use-pytorch-cross-attention & echo pause) > \"{INSTALL_PATH}\\Run_Comfyui.bat\""},
+          {"name": "Create Activate_Venv.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\\venv\" & echo call .\\Scripts\\activate.bat & echo echo Venv Activated & echo cmd.exe /k) > \"{INSTALL_PATH}\\Activate_Venv.bat\""},
+          {"name": "Create Update_Comfy.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo git pull & echo pause) > \"{INSTALL_PATH}\\Update_Comfy.bat\""},
+          {"name": "Clone ComfyUI-Manager", "command": "git clone https://github.com/ltdrdata/ComfyUI-Manager \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\""},
+          {"name": "Clone ComfyUI-Crystools", "command": "git clone https://github.com/crystian/ComfyUI-Crystools \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\""}
+        ]}
+      ]
+    },
+    "ComfyUI_Py312_CUDA124": {
+      "description": "ComfyUI + Triton + SageAttention installation for Python 3.12 and CUDA 12.4.",
+      "info": "Includes prerequisite checks for Python 3.12, CUDA 12.4 and cl.exe.",
+      "python_version_target": "3.12",
+      "cuda_version_target": "12.4",
+      "steps": [
+        {"key": "start", "step_data": [
+          {"name": "Clone ComfyUI Repository", "command": "git clone https://github.com/comfyanonymous/ComfyUI \"{COMFYUI_PATH}\""}
+        ]},
+        {"key": "prequire1", "step_data": [
+          {"name": "Check Python Version (3.12)", "command": "\"{PYTHON_EXE}\" --version | findstr /B /C:\"Python 3.12\""},
+          {"name": "Check CUDA Version (12.4)", "command": "nvcc --version | findstr /C:\"release 12.4,\""},
+          {"name": "Check C++ Compiler (cl.exe)", "command": "where cl.exe"}
+        ]},
+        {"key": "install_part1", "step_data": [
+          {"name": "Create Virtual Environment", "command": "\"{PYTHON_EXE}\" -m venv \"{VENV_PATH}\""},
+          {"name": "Copy Python Headers", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\Include\" \"{VENV_PATH}\\Include\""},
+          {"name": "Copy Python Libs", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\libs\" \"{VENV_PATH}\\libs\""},
+          {"name": "Copy VC Runtime DLL 1", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Copy VC Runtime DLL 2", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140_1.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Update Pip", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+          {"name": "Install PyTorch (CUDA 12.4)", "command": "\"{VENV_PYTHON}\" -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124"}
+        ]},
+        {"key": "install_part2", "step_data": [
+          {"name": "Install requirements.txt", "command": "\"{VENV_PYTHON}\" -m pip install -r \"{COMFYUI_PATH}\\requirements.txt\""},
+          {"name": "Install OnnxRuntime-GPU", "command": "\"{VENV_PYTHON}\" -m pip install onnxruntime-gpu"},
+          {"name": "Install Wheel", "command": "\"{VENV_PYTHON}\" -m pip install wheel"},
+          {"name": "Install Setuptools", "command": "\"{VENV_PYTHON}\" -m pip install setuptools"},
+          {"name": "Install Packaging", "command": "\"{VENV_PYTHON}\" -m pip install packaging"},
+          {"name": "Install Ninja", "command": "\"{VENV_PYTHON}\" -m pip install ninja"},
+          {"name": "Install Accelerate", "command": "\"{VENV_PYTHON}\" -m pip install \"accelerate >= 1.1.1\""},
+          {"name": "Install Diffusers", "command": "\"{VENV_PYTHON}\" -m pip install \"diffusers >= 0.31.0\""},
+          {"name": "Install Transformers", "command": "\"{VENV_PYTHON}\" -m pip install \"transformers >= 4.39.3\""},
+          {"name": "Update Setuptools (again)", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade setuptools"}
+        ]},
+        {"key": "input1_triton", "step_data": {
+          "question": "Choose Triton version (check PyTorch/Python 3.12 compatibility):",
+          "choices": {
+            "Triton_3.2.0": { "steps": [ {"name": "Install Triton 3.2.0 (Py3.12)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.2.0-windows.post10/triton-3.2.0-cp312-cp312-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.1.0": { "steps": [ {"name": "Install Triton 3.1.0 (Py3.12)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.1.0-cp312-cp312-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.0.0": { "steps": [ {"name": "Install Triton 3.0.0 (Py3.12)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.0.0-cp312-cp312-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] }
+          }
+        }},
+        {"key": "post_part1", "step_data": [
+          {"name": "Clone SageAttention", "command": "git clone https://github.com/thu-ml/SageAttention \"{VENV_PATH}\\SageAttention\""},
+          {"name": "Install SageAttention", "command": "cd /d \"{VENV_PATH}\\SageAttention\" && \"{VENV_PYTHON}\" setup.py install"},
+          {"name": "Clean SageAttention", "command": "rmdir /s /q \"{VENV_PATH}\\SageAttention\""}
+        ]},
+        {"key": "post_part2", "step_data": [
+          {"name": "Create Run_Comfyui.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo call venv\\Scripts\\activate.bat & echo echo Venv Activated & echo .\\venv\\Scripts\\python.exe -s main.py --fast --windows-standalone-build --use-pytorch-cross-attention & echo pause) > \"{INSTALL_PATH}\\Run_Comfyui.bat\""},
+          {"name": "Create Activate_Venv.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\\venv\" & echo call .\\Scripts\\activate.bat & echo echo Venv Activated & echo cmd.exe /k) > \"{INSTALL_PATH}\\Activate_Venv.bat\""},
+          {"name": "Create Update_Comfy.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo git pull & echo pause) > \"{INSTALL_PATH}\\Update_Comfy.bat\""},
+          {"name": "Clone ComfyUI-Manager", "command": "git clone https://github.com/ltdrdata/ComfyUI-Manager \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\""},
+          {"name": "Clone ComfyUI-Crystools", "command": "git clone https://github.com/crystian/ComfyUI-Crystools \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\""}
+        ]}
+      ]
+    },
+    "ComfyUI_Py312_CUDA126": {
+      "description": "ComfyUI + Triton + SageAttention installation for Python 3.12 and CUDA 12.6.",
+      "info": "Includes prerequisite checks for Python 3.12, CUDA 12.6 and cl.exe.",
+      "python_version_target": "3.12",
+      "cuda_version_target": "12.6",
+      "steps": [
+        {"key": "start", "step_data": [
+          {"name": "Clone ComfyUI Repository", "command": "git clone https://github.com/comfyanonymous/ComfyUI \"{COMFYUI_PATH}\""}
+        ]},
+        {"key": "prequire1", "step_data": [
+          {"name": "Check Python Version (3.12)", "command": "\"{PYTHON_EXE}\" --version | findstr /B /C:\"Python 3.12\""},
+          {"name": "Check CUDA Version (12.6)", "command": "nvcc --version | findstr /C:\"release 12.6,\""},
+          {"name": "Check C++ Compiler (cl.exe)", "command": "where cl.exe"}
+        ]},
+        {"key": "install_part1", "step_data": [
+          {"name": "Create Virtual Environment", "command": "\"{PYTHON_EXE}\" -m venv \"{VENV_PATH}\""},
+          {"name": "Copy Python Headers", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\Include\" \"{VENV_PATH}\\Include\""},
+          {"name": "Copy Python Libs", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\libs\" \"{VENV_PATH}\\libs\""},
+          {"name": "Copy VC Runtime DLL 1", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Copy VC Runtime DLL 2", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140_1.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Update Pip", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+          {"name": "Install PyTorch (CUDA 12.6)", "command": "\"{VENV_PYTHON}\" -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126"}
+        ]},
+        {"key": "install_part2", "step_data": [
+          {"name": "Install requirements.txt", "command": "\"{VENV_PYTHON}\" -m pip install -r \"{COMFYUI_PATH}\\requirements.txt\""},
+          {"name": "Install OnnxRuntime-GPU", "command": "\"{VENV_PYTHON}\" -m pip install onnxruntime-gpu"},
+          {"name": "Install Wheel", "command": "\"{VENV_PYTHON}\" -m pip install wheel"},
+          {"name": "Install Setuptools", "command": "\"{VENV_PYTHON}\" -m pip install setuptools"},
+          {"name": "Install Packaging", "command": "\"{VENV_PYTHON}\" -m pip install packaging"},
+          {"name": "Install Ninja", "command": "\"{VENV_PYTHON}\" -m pip install ninja"},
+          {"name": "Install Accelerate", "command": "\"{VENV_PYTHON}\" -m pip install \"accelerate >= 1.1.1\""},
+          {"name": "Install Diffusers", "command": "\"{VENV_PYTHON}\" -m pip install \"diffusers >= 0.31.0\""},
+          {"name": "Install Transformers", "command": "\"{VENV_PYTHON}\" -m pip install \"transformers >= 4.39.3\""},
+          {"name": "Update Setuptools (again)", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade setuptools"}
+        ]},
+        {"key": "input1_triton", "step_data": {
+          "question": "Choose Triton version (check PyTorch/Python 3.12 compatibility):",
+          "choices": {
+            "Triton_3.2.0": { "steps": [ {"name": "Install Triton 3.2.0 (Py3.12)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.2.0-windows.post10/triton-3.2.0-cp312-cp312-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.1.0": { "steps": [ {"name": "Install Triton 3.1.0 (Py3.12)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.1.0-cp312-cp312-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] },
+            "Triton_3.0.0": { "steps": [ {"name": "Install Triton 3.0.0 (Py3.12)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.1.0-windows.post9/triton-3.0.0-cp312-cp312-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] }
+          }
+        }},
+        {"key": "post_part1", "step_data": [
+          {"name": "Clone SageAttention", "command": "git clone https://github.com/thu-ml/SageAttention \"{VENV_PATH}\\SageAttention\""},
+          {"name": "Install SageAttention", "command": "cd /d \"{VENV_PATH}\\SageAttention\" && \"{VENV_PYTHON}\" setup.py install"},
+          {"name": "Clean SageAttention", "command": "rmdir /s /q \"{VENV_PATH}\\SageAttention\""}
+        ]},
+        {"key": "post_part2", "step_data": [
+          {"name": "Create Run_Comfyui.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo call venv\\Scripts\\activate.bat & echo echo Venv Activated & echo .\\venv\\Scripts\\python.exe -s main.py --fast --windows-standalone-build --use-pytorch-cross-attention & echo pause) > \"{INSTALL_PATH}\\Run_Comfyui.bat\""},
+          {"name": "Create Activate_Venv.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\\venv\" & echo call .\\Scripts\\activate.bat & echo echo Venv Activated & echo cmd.exe /k) > \"{INSTALL_PATH}\\Activate_Venv.bat\""},
+          {"name": "Create Update_Comfy.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo git pull & echo pause) > \"{INSTALL_PATH}\\Update_Comfy.bat\""},
+          {"name": "Clone ComfyUI-Manager", "command": "git clone https://github.com/ltdrdata/ComfyUI-Manager \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\""},
+          {"name": "Clone ComfyUI-Crystools", "command": "git clone https://github.com/crystian/ComfyUI-Crystools \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\""}
+        ]}
+      ]
+    },
+    "ComfyUI_Py313_CUDA124": {
+      "description": "ComfyUI + Triton + SageAttention installation for Python 3.13 and CUDA 12.4.",
+      "info": "Includes prerequisite checks for Python 3.13, CUDA 12.4 and cl.exe. Triton v3.1/v3.0 not available.",
+      "python_version_target": "3.13",
+      "cuda_version_target": "12.4",
+      "steps": [
+        {"key": "start", "step_data": [
+          {"name": "Clone ComfyUI Repository", "command": "git clone https://github.com/comfyanonymous/ComfyUI \"{COMFYUI_PATH}\""}
+        ]},
+        {"key": "prequire1", "step_data": [
+          {"name": "Check Python Version (3.13)", "command": "\"{PYTHON_EXE}\" --version | findstr /B /C:\"Python 3.13\""},
+          {"name": "Check CUDA Version (12.4)", "command": "nvcc --version | findstr /C:\"release 12.4,\""},
+          {"name": "Check C++ Compiler (cl.exe)", "command": "where cl.exe"}
+        ]},
+        {"key": "install_part1", "step_data": [
+          {"name": "Create Virtual Environment", "command": "\"{PYTHON_EXE}\" -m venv \"{VENV_PATH}\""},
+          {"name": "Copy Python Headers", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\Include\" \"{VENV_PATH}\\Include\""},
+          {"name": "Copy Python Libs", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\libs\" \"{VENV_PATH}\\libs\""},
+          {"name": "Copy VC Runtime DLL 1", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Copy VC Runtime DLL 2", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140_1.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Update Pip", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+          {"name": "Install PyTorch (CUDA 12.4)", "command": "\"{VENV_PYTHON}\" -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124"}
+        ]},
+        {"key": "install_part2", "step_data": [
+          {"name": "Install requirements.txt", "command": "\"{VENV_PYTHON}\" -m pip install -r \"{COMFYUI_PATH}\\requirements.txt\""},
+          {"name": "Install OnnxRuntime-GPU", "command": "\"{VENV_PYTHON}\" -m pip install onnxruntime-gpu"},
+          {"name": "Install Wheel", "command": "\"{VENV_PYTHON}\" -m pip install wheel"},
+          {"name": "Install Setuptools", "command": "\"{VENV_PYTHON}\" -m pip install setuptools"},
+          {"name": "Install Packaging", "command": "\"{VENV_PYTHON}\" -m pip install packaging"},
+          {"name": "Install Ninja", "command": "\"{VENV_PYTHON}\" -m pip install ninja"},
+          {"name": "Install Accelerate", "command": "\"{VENV_PYTHON}\" -m pip install \"accelerate >= 1.1.1\""},
+          {"name": "Install Diffusers", "command": "\"{VENV_PYTHON}\" -m pip install \"diffusers >= 0.31.0\""},
+          {"name": "Install Transformers", "command": "\"{VENV_PYTHON}\" -m pip install \"transformers >= 4.39.3\""},
+          {"name": "Update Setuptools (again)", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade setuptools"}
+        ]},
+        {"key": "input1_triton", "step_data": {
+          "question": "Choose Triton version (check PyTorch/Python 3.13 compatibility):",
+          "choices": {
+            "Triton_3.2.0": { "steps": [ {"name": "Install Triton 3.2.0 (Py3.13)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.2.0-windows.post10/triton-3.2.0-cp313-cp313-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] }
+          }
+        }},
+        {"key": "post_part1", "step_data": [
+          {"name": "Clone SageAttention", "command": "git clone https://github.com/thu-ml/SageAttention \"{VENV_PATH}\\SageAttention\""},
+          {"name": "Install SageAttention", "command": "cd /d \"{VENV_PATH}\\SageAttention\" && \"{VENV_PYTHON}\" setup.py install"},
+          {"name": "Clean SageAttention", "command": "rmdir /s /q \"{VENV_PATH}\\SageAttention\""}
+        ]},
+        {"key": "post_part2", "step_data": [
+          {"name": "Create Run_Comfyui.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo call venv\\Scripts\\activate.bat & echo echo Venv Activated & echo .\\venv\\Scripts\\python.exe -s main.py --fast --windows-standalone-build --use-pytorch-cross-attention & echo pause) > \"{INSTALL_PATH}\\Run_Comfyui.bat\""},
+          {"name": "Create Activate_Venv.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\\venv\" & echo call .\\Scripts\\activate.bat & echo echo Venv Activated & echo cmd.exe /k) > \"{INSTALL_PATH}\\Activate_Venv.bat\""},
+          {"name": "Create Update_Comfy.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo git pull & echo pause) > \"{INSTALL_PATH}\\Update_Comfy.bat\""},
+          {"name": "Clone ComfyUI-Manager", "command": "git clone https://github.com/ltdrdata/ComfyUI-Manager \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\""},
+          {"name": "Clone ComfyUI-Crystools", "command": "git clone https://github.com/crystian/ComfyUI-Crystools \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\""}
+        ]}
+      ]
+    },
+    "ComfyUI_Py313_CUDA126": {
+      "description": "ComfyUI + Triton + SageAttention installation for Python 3.13 and CUDA 12.6.",
+      "info": "Includes prerequisite checks for Python 3.13, CUDA 12.6 and cl.exe. Triton v3.1/v3.0 not available.",
+      "python_version_target": "3.13",
+      "cuda_version_target": "12.6",
+      "steps": [
+        {"key": "start", "step_data": [
+          {"name": "Clone ComfyUI Repository", "command": "git clone https://github.com/comfyanonymous/ComfyUI \"{COMFYUI_PATH}\""}
+        ]},
+        {"key": "prequire1", "step_data": [
+          {"name": "Check Python Version (3.13)", "command": "\"{PYTHON_EXE}\" --version | findstr /B /C:\"Python 3.13\""},
+          {"name": "Check CUDA Version (12.6)", "command": "nvcc --version | findstr /C:\"release 12.6,\""},
+          {"name": "Check C++ Compiler (cl.exe)", "command": "where cl.exe"}
+        ]},
+        {"key": "install_part1", "step_data": [
+          {"name": "Create Virtual Environment", "command": "\"{PYTHON_EXE}\" -m venv \"{VENV_PATH}\""},
+          {"name": "Copy Python Headers", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\Include\" \"{VENV_PATH}\\Include\""},
+          {"name": "Copy Python Libs", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\libs\" \"{VENV_PATH}\\libs\""},
+          {"name": "Copy VC Runtime DLL 1", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Copy VC Runtime DLL 2", "command": "xcopy /E /I /Y \"{PYTHON_EXE}\\..\\vcruntime140_1.dll\" \"{VENV_PATH}\\Scripts\\\""},
+          {"name": "Update Pip", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+          {"name": "Install PyTorch (CUDA 12.6)", "command": "\"{VENV_PYTHON}\" -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126"}
+        ]},
+        {"key": "install_part2", "step_data": [
+          {"name": "Install requirements.txt", "command": "\"{VENV_PYTHON}\" -m pip install -r \"{COMFYUI_PATH}\\requirements.txt\""},
+          {"name": "Install OnnxRuntime-GPU", "command": "\"{VENV_PYTHON}\" -m pip install onnxruntime-gpu"},
+          {"name": "Install Wheel", "command": "\"{VENV_PYTHON}\" -m pip install wheel"},
+          {"name": "Install Setuptools", "command": "\"{VENV_PYTHON}\" -m pip install setuptools"},
+          {"name": "Install Packaging", "command": "\"{VENV_PYTHON}\" -m pip install packaging"},
+          {"name": "Install Ninja", "command": "\"{VENV_PYTHON}\" -m pip install ninja"},
+          {"name": "Install Accelerate", "command": "\"{VENV_PYTHON}\" -m pip install \"accelerate >= 1.1.1\""},
+          {"name": "Install Diffusers", "command": "\"{VENV_PYTHON}\" -m pip install \"diffusers >= 0.31.0\""},
+          {"name": "Install Transformers", "command": "\"{VENV_PYTHON}\" -m pip install \"transformers >= 4.39.3\""},
+          {"name": "Update Setuptools (again)", "command": "\"{VENV_PYTHON}\" -m pip install --upgrade setuptools"}
+        ]},
+        {"key": "input1_triton", "step_data": {
+          "question": "Choose Triton version (check PyTorch/Python 3.13 compatibility):",
+          "choices": {
+            "Triton_3.2.0": { "steps": [ {"name": "Install Triton 3.2.0 (Py3.13)", "command": "\"{VENV_PYTHON}\" -m pip install https://github.com/woct0rdho/triton-windows/releases/download/v3.2.0-windows.post10/triton-3.2.0-cp313-cp313-win_amd64.whl"}, {"name": "Clean Triton cache (.triton)", "command": "if exist \"C:\\Users\\%USERNAME%\\.triton\\cache\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\.triton\\cache\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\.triton\\cache\" )"}, {"name": "Clean Triton cache (torchinductor)", "command": "if exist \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"C:\\Users\\%USERNAME%\\AppData\\Local\\Temp\\torchinductor_%USERNAME%\\triton\" )"} ] }
+          }
+        }},
+        {"key": "post_part1", "step_data": [
+          {"name": "Clone SageAttention", "command": "git clone https://github.com/thu-ml/SageAttention \"{VENV_PATH}\\SageAttention\""},
+          {"name": "Install SageAttention", "command": "cd /d \"{VENV_PATH}\\SageAttention\" && \"{VENV_PYTHON}\" setup.py install"},
+          {"name": "Clean SageAttention", "command": "rmdir /s /q \"{VENV_PATH}\\SageAttention\""}
+        ]},
+        {"key": "post_part2", "step_data": [
+          {"name": "Create Run_Comfyui.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo call venv\\Scripts\\activate.bat & echo echo Venv Activated & echo .\\venv\\Scripts\\python.exe -s main.py --fast --windows-standalone-build --use-pytorch-cross-attention & echo pause) > \"{INSTALL_PATH}\\Run_Comfyui.bat\""},
+          {"name": "Create Activate_Venv.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\\venv\" & echo call .\\Scripts\\activate.bat & echo echo Venv Activated & echo cmd.exe /k) > \"{INSTALL_PATH}\\Activate_Venv.bat\""},
+          {"name": "Create Update_Comfy.bat", "command": "(echo @echo off & echo cd /d \"{COMFYUI_PATH}\" & echo git pull & echo pause) > \"{INSTALL_PATH}\\Update_Comfy.bat\""},
+          {"name": "Clone ComfyUI-Manager", "command": "git clone https://github.com/ltdrdata/ComfyUI-Manager \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Manager\""},
+          {"name": "Clone ComfyUI-Crystools", "command": "git clone https://github.com/crystian/ComfyUI-Crystools \"{COMFYUI_PATH}\\custom_nodes\\ComfyUI-Crystools\""}
+        ]}
+      ]
+    }
+  }
+}
