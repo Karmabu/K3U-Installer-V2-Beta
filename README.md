@@ -1,5 +1,7 @@
- -📦 K3U Installer v2 Beta – 
-Flexible ComfyUI Installation
+  🌟 **K3U Installer v2 Beta**
+  
+🔧 Flexible & Visual ComfyUI Installer
+
 K3U Installer is a desktop GUI tool designed to simplify and automate the installation of ComfyUI with flexible setups.
 
 This is a configurable and scriptable installer that reads .k3u files to create full environments, clone repos, install PyTorch, CUDA, Triton, SageAttention, and more.
