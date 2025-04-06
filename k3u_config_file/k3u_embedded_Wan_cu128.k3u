@@ -1,0 +1,87 @@
+{
+  "k3u_type": "embedded",
+  "placeholders_info": {
+    "{INSTALL_PATH}": "Base folder where 'python_embeded' and the repository folder will be created.",
+    "{EMBEDDED_PYTHON_DIR}": "Embedded Python folder (derived: {INSTALL_PATH}\\python_embeded).",
+    "{EMBEDDED_PYTHON_EXE}": "Embedded Python executable (derived: {EMBEDDED_PYTHON_DIR}\\python.exe).",
+    "{REPO_PATH}": "Path to the main repository folder (derived: {INSTALL_PATH}\\[repo_subdir])."
+  },
+  "setups": {
+    "ComfyUI_Embed_Custom_Py312_cu128": {
+      "description": "Custom ComfyUI setup with Embedded Python 3.12, PyTorch Nightly (CUDA 12.8), Nightly Triton, Sage v1, and multiple custom nodes.",
+      "info": "Installs VS Build Tools, PyTorch, Triton, Sage, ComfyUI, Manager, VHS, KJNodes, Essentials, Frame Interp, MultiGPU, AdaptiveGuidance, GGUF, WanVideoWrapper.",
+      "python_version_target": "3.12",
+      "cuda_version_target": "12.8",
+      "pytorch_type": "Nightly",
+      "repo_subdir": "ComfyUI",
+      "steps": [
+        {"key": "prequire_system", "step_data": [
+            {"name": "Check Curl", "command": "where curl"},
+            {"name": "Check Tar", "command": "where tar"},
+            {"name": "Check Git", "command": "where git"},
+            {"name": "Check Winget", "command": "where winget"},
+            {"name": "Check cl.exe (Optional Pre-Check)", "command": "where cl.exe || echo Warning: cl.exe not found initially, will attempt VS Build Tools install."}
+        ]},
+        {"key": "setup_embed_python", "step_data": [
+          {"name": "Create Embedded Python Folder (if needed)", "command": "if not exist \"{EMBEDDED_PYTHON_DIR}\" mkdir \"{EMBEDDED_PYTHON_DIR}\""},
+          {"name": "Download Python 3.12.4 Embedded (zip)", "command": "curl -L \"https://www.python.org/ftp/python/3.12.4/python-3.12.4-embed-amd64.zip\" -o \"{INSTALL_PATH}\\pyembed.zip\""},
+          {"name": "Extract Python Embedded", "command": "tar -xf \"{INSTALL_PATH}\\pyembed.zip\" -C \"{EMBEDDED_PYTHON_DIR}\""},
+          {"name": "Download get-pip.py", "command": "curl -L \"https://bootstrap.pypa.io/get-pip.py\" -o \"{INSTALL_PATH}\\get-pip.py\""},
+          {"name": "Install Pip", "command": "\"{EMBEDDED_PYTHON_EXE}\" \"{INSTALL_PATH}\\get-pip.py\""},
+          {"name": "Clean up downloaded files (zip, get-pip)", "command": "del \"{INSTALL_PATH}\\pyembed.zip\" \"{INSTALL_PATH}\\get-pip.py\""},
+          {"name": "Enable site-packages in ._pth file", "command": "(echo import site >> \"{EMBEDDED_PYTHON_DIR}\\python312._pth\")"},
+          {"name": "Upgrade Pip", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --upgrade pip"}
+        ]},
+        {"key": "install_vs_tools", "step_data": [
+            {"name": "Install/Update VS 2022 Build Tools", "command": "winget install --id Microsoft.VisualStudio.2022.BuildTools -e --source winget --override \"--quiet --wait --norestart --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows10SDK.20348\" || echo Note: Winget might report failure if tools are already installed/updated.", "message": "Installing VS Build Tools via winget (may take time)..."}
+        ]},
+        {"key": "prequire_build", "step_data": [
+            {"name": "Verify C++ Compiler (cl.exe)", "command": "where cl.exe"}
+        ]},
+        {"key": "install_pytorch", "step_data": [
+           {"name": "Install PyTorch Nightly (CUDA 12.8)", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install --force-reinstall torch==2.8.0.dev20250317+cu128 torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128", "message":"Installing specific PyTorch Nightly build..."},
+           {"name": "Verify PyTorch Installation", "command": "\"{EMBEDDED_PYTHON_EXE}\" -c \"import torch; print(f'PyTorch Version: {torch.__version__}, CUDA Available: {torch.cuda.is_available()}, CUDA Version: {torch.version.cuda}')\""}
+        ]},
+        {"key": "install_triton", "step_data": [
+           {"name": "Install Triton Nightly", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install -U --pre triton-windows"},
+           {"name": "Clear Triton Cache (.triton)", "command": "if exist \"%USERPROFILE%\\.triton\\cache\" ( rmdir /s /q \"%USERPROFILE%\\.triton\\cache\" 2>nul && mkdir \"%USERPROFILE%\\.triton\\cache\" )"},
+           {"name": "Clear Triton Cache (torchinductor)", "command": "if exist \"%LOCALAPPDATA%\\Temp\\torchinductor_%USERNAME%\\triton\" ( rmdir /s /q \"%LOCALAPPDATA%\\Temp\\torchinductor_%USERNAME%\\triton\" 2>nul && mkdir \"%LOCALAPPDATA%\\Temp\\torchinductor_%USERNAME%\\triton\" )"}
+         ]},
+         {"key": "install_include_libs", "step_data": [
+          {"name": "Download Python 3.12 Include/Libs (zip)", "command": "curl -L \"https://github.com/woct0rdho/triton-windows/releases/download/v3.0.0-windows.post1/python_3.12.7_include_libs.zip\" -o \"{INSTALL_PATH}\\py_libs.zip\""},
+          {"name": "Extract Include/Libs", "command": "tar -xf \"{INSTALL_PATH}\\py_libs.zip\" -C \"{EMBEDDED_PYTHON_DIR}\""},
+          {"name": "Clean downloaded file (libs zip)", "command": "del \"{INSTALL_PATH}\\py_libs.zip\""}
+        ]},
+        {"key": "install_sage1", "step_data": [
+            {"name": "Install SageAttention v1 (1.0.6)", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install sageattention==1.0.6"}
+        ]},
+        {"key": "clone_comfyui", "step_data": [
+          {"name": "Clone ComfyUI Repository", "command": "git clone https://github.com/comfyanonymous/ComfyUI \"{REPO_PATH}\""}
+        ]},
+        {"key": "install_comfy_reqs", "step_data": [
+          {"name": "Install ComfyUI requirements.txt", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install -r \"{REPO_PATH}\\requirements.txt\""}
+        ]},
+        {"key": "clone_custom_nodes", "step_data": [
+           {"name": "Clone ComfyUI-Manager", "command": "git clone https://github.com/ltdrdata/ComfyUI-Manager \"{REPO_PATH}\\custom_nodes\\ComfyUI-Manager\""},
+           {"name": "Clone ComfyUI-VideoHelperSuite", "command": "git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite \"{REPO_PATH}\\custom_nodes\\ComfyUI-VideoHelperSuite\""},
+           {"name": "Clone ComfyUI-KJNodes", "command": "git clone https://github.com/kijai/ComfyUI-KJNodes \"{REPO_PATH}\\custom_nodes\\ComfyUI-KJNodes\""},
+           {"name": "Clone ComfyUI_essentials", "command": "git clone https://github.com/cubiq/ComfyUI_essentials \"{REPO_PATH}\\custom_nodes\\ComfyUI_essentials\""},
+           {"name": "Clone ComfyUI-Frame-Interpolation", "command": "git clone https://github.com/Fannovel16/ComfyUI-Frame-Interpolation \"{REPO_PATH}\\custom_nodes\\ComfyUI-Frame-Interpolation\""},
+           {"name": "Clone ComfyUI-MultiGPU", "command": "git clone https://github.com/pollockjj/ComfyUI-MultiGPU \"{REPO_PATH}\\custom_nodes\\ComfyUI-MultiGPU\""},
+           {"name": "Clone ComfyUI-Adaptive-Guidance", "command": "git clone https://github.com/asagi4/ComfyUI-Adaptive-Guidance \"{REPO_PATH}\\custom_nodes\\ComfyUI-Adaptive-Guidance\""},
+           {"name": "Clone ComfyUI-GGUF", "command": "git clone https://github.com/city96/ComfyUI-GGUF \"{REPO_PATH}\\custom_nodes\\ComfyUI-GGUF\""},
+           {"name": "Clone ComfyUI-WanVideoWrapper", "command": "git clone https://github.com/kijai/ComfyUI-WanVideoWrapper \"{REPO_PATH}\\custom_nodes\\ComfyUI-WanVideoWrapper\""}
+        ]},
+        {"key": "install_custom_node_reqs", "step_data": [
+           {"name": "Install ComfyUI-Manager Requirements", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install -r \"{REPO_PATH}\\custom_nodes\\ComfyUI-Manager\\requirements.txt\""},
+           {"name": "Install ComfyUI-VideoHelperSuite Requirements", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install -r \"{REPO_PATH}\\custom_nodes\\ComfyUI-VideoHelperSuite\\requirements.txt\""},
+           {"name": "Install ComfyUI-KJNodes Requirements", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install -r \"{REPO_PATH}\\custom_nodes\\ComfyUI-KJNodes\\requirements.txt\""},
+           {"name": "Install ComfyUI_essentials Requirements", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install -r \"{REPO_PATH}\\custom_nodes\\ComfyUI_essentials\\requirements.txt\""},
+           {"name": "Install ComfyUI-Frame-Interpolation Requirements (CuPy)", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install -r \"{REPO_PATH}\\custom_nodes\\ComfyUI-Frame-Interpolation\\requirements-with-cupy.txt\""},
+           {"name": "Install ComfyUI-GGUF Requirements", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install -r \"{REPO_PATH}\\custom_nodes\\ComfyUI-GGUF\\requirements.txt\""},
+           {"name": "Install ComfyUI-WanVideoWrapper Requirements", "command": "\"{EMBEDDED_PYTHON_EXE}\" -s -m pip install -r \"{REPO_PATH}\\custom_nodes\\ComfyUI-WanVideoWrapper\\requirements.txt\""}
+        ]}
+      ]
+    }
+  }
+}
